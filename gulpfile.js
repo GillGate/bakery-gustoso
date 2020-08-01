@@ -1,22 +1,23 @@
-const gulp = require('gulp');
-const posthtml = require("gulp-posthtml");
-const include = require("posthtml-include");
-const autoprefixer = require('gulp-autoprefixer');
-const less = require('gulp-less');
-const cleanCSS = require('gulp-clean-css');
-const sourcemaps = require('gulp-sourcemaps');
-const gcmq = require('gulp-group-css-media-queries');
-const plumber = require("gulp-plumber");
-const imagemin = require('gulp-imagemin');
-const imageminWebp = require('imagemin-webp');
-const svgstore = require("gulp-svgstore");
-const cheerio = require('gulp-cheerio');
-const rename = require('gulp-rename');
-const uglify = require('gulp-uglify');
-const concat = require('gulp-concat');
-const gulpif = require('gulp-if');
-const del = require('del');
-const browserSync = require('browser-sync').create();
+const gulp              = require('gulp');
+const posthtml          = require("gulp-posthtml");
+const include           = require("posthtml-include");
+const autoprefixer      = require('gulp-autoprefixer');
+const less              = require('gulp-less');
+const cleanCSS          = require('gulp-clean-css');
+const sourcemaps        = require('gulp-sourcemaps');
+const gcmq              = require('gulp-group-css-media-queries');
+const plumber           = require("gulp-plumber");
+const imagemin          = require('gulp-imagemin');
+// const webp              = require('gulp-webp');
+const svgstore          = require("gulp-svgstore");
+const cheerio           = require('gulp-cheerio');
+const rename            = require('gulp-rename');
+const uglify            = require('gulp-uglify-es').default;
+const webpack           = require('webpack-stream');
+const concat            = require('gulp-concat');
+const gulpif            = require('gulp-if');
+const del               = require('del');
+const browserSync       = require('browser-sync').create();
 
 const isDev = (process.argv.indexOf('--dev') !== -1);
 const isProd = !isDev;
@@ -52,6 +53,30 @@ let config = {
     }
 };
 
+let webpackConfig = {
+    output: {
+        filename: 'all.js'
+    },
+    module: {
+        rules: [
+            {
+                test: /\.m?js$/,
+                exclude: /(node_modules|bower_components)/,
+                use: {
+                    loader: 'babel-loader',
+                    options: {
+                        presets: ['@babel/preset-env']
+                    }
+                }
+            }
+        ]
+    },
+    externals: {
+        moment: 'moment'
+    },
+    mode: isDev ? 'development' : 'production'
+};
+
 function html() {
     return gulp.src(config.src + config.html.src)
         .pipe(posthtml([
@@ -63,21 +88,21 @@ function html() {
 
 function styles() {
     return gulp.src(config.src + config.less.src)
-       .pipe(less())
-       .pipe(gulpif(isDev, sourcemaps.init()))
-       .pipe(gcmq())
-       .pipe(autoprefixer({
+        .pipe(less())
+        .pipe(gulpif(isDev, sourcemaps.init()))
+        .pipe(gcmq())
+        .pipe(autoprefixer({
             overrideBrowserslist: ['defaults'],
             cascade: false
-       }))
-       .pipe(gulpif(isDev, gulp.dest(config.build + config.less.dest)))
-       .pipe(cleanCSS({
+        }))
+        .pipe(gulpif(isDev, gulp.dest(config.build + config.less.dest)))
+        .pipe(cleanCSS({
             level: 2
         }))
-       .pipe(rename("style.min.css"))
-       .pipe(gulpif(isDev, sourcemaps.write('.')))
-       .pipe(gulp.dest(config.build + config.less.dest))
-       .pipe(gulpif(isSync, browserSync.stream()));
+        .pipe(rename("style.min.css"))
+        .pipe(gulpif(isDev, sourcemaps.write('.')))
+        .pipe(gulp.dest(config.build + config.less.dest))
+        .pipe(gulpif(isSync, browserSync.stream()));
 }
 
 function grid(done) {
@@ -89,12 +114,25 @@ function grid(done) {
 
 function img() {
     return gulp.src(config.src + config.img.src)
-        /*.pipe(imagemin([
-            imagemin.optipng({optimizationLevel: 3}),
+        .pipe(imagemin([
+            imagemin.optipng({optimizationLevel: 5}),
             imagemin.jpegtran({progressive: true}),
             imagemin.gifsicle({interlaced: true}),
-            imagemin.svgo()
-        ]))*/
+            imagemin.svgo({
+                plugins: [
+                    {removeViewBox: true},
+                    {cleanupIDs: false}
+                ]
+            })
+        ]))
+        /*
+        .pipe(gulp.dest(config.build + config.img.dest))
+        .pipe(webp({
+            quality: 70,
+            preset: 'photo',
+            lossless: true
+        }))
+        */
         .pipe(gulp.dest(config.build + config.img.dest));
 }
 
@@ -106,15 +144,26 @@ function js(done) {
         'src/js/main.js'
     ];
 
-    return gulp.src(config.src + config.js.src)
+    return gulp.src(jsArray)
         .pipe(gulpif(isDev, sourcemaps.init()))
         .pipe(concat('all.js'))
+        .pipe(uglify())
         .pipe(gulpif(isDev, sourcemaps.write('.')))
         .pipe(gulp.dest(config.build + config.js.dest))
         .pipe(gulpif(isSync, browserSync.stream()));
         done();
 }
-
+/*
+function js(done) {
+    return gulp.src(config.src + '/js/index.js')
+        // .pipe(gulpif(isDev, sourcemaps.init()))
+        .pipe(webpack(webpackConfig))        
+        // .pipe(gulpif(isDev, sourcemaps.write('.')))
+        .pipe(gulp.dest(config.build + config.js.dest))
+        .pipe(gulpif(isSync, browserSync.stream()));
+        done();
+}
+*/
 function fonts() {
     return gulp.src(config.src + config.fonts.src)
         .pipe(gulp.dest(config.build + config.fonts.dest));

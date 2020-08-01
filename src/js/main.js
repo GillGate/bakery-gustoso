@@ -23,14 +23,14 @@ $(function(){
     $(window).on('resize', function() {
         clWidth = document.documentElement.clientWidth;
 
-        if(clWidth > 993) {
+        if(clWidth > 783) {
            $('.header__listWrapper').show();
         }
     });
 
     $(window).on('click', function(e) {
-        if (clWidth < 993) {
-             if(!$(e.target.offsetParent).hasClass('header__list')) {
+        if (clWidth < 783) {
+            if(!$(e.target.offsetParent).hasClass('header__list')) {
                 $('.header__listWrapper').hide(300);
             }
         }
@@ -40,7 +40,7 @@ $(function(){
         $(this).next().toggle(300);
     });
 
-    let $links = $('.header a');
+    let $links = $('.header a, .footer a');
 
     $links.on('click', function(e) {
         e.preventDefault();

@@ -26,10 +26,10 @@
     "gulp-rename": "^1.4.0",
     "gulp-sourcemaps": "^2.6.5",
     "gulp-svgstore": "^7.0.1",
-    "gulp-uglify": "^3.0.1",
-    "imagemin-webp": "^5.0.0",
+    "gulp-uglify-es": "^2.0.0",
     "posthtml-include": "^1.2.0",
     "readable-stream": "^3.6.0",
-    "smart-grid": "^2.1.2"
+    "smart-grid": "^2.1.2",
+    "webpack-stream": "^5.2.1"
   }
 }
